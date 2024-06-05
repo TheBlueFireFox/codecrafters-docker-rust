@@ -28,17 +28,15 @@ struct RunCommand {
 async fn main() -> Result<()> {
     let args = Args::parse();
     // You can use print statements as follows for debugging, they'll be visible when running tests.
-    println!("Logs from your program will appear here!");
-
     match &args.command {
         Command::Run(com) => run(com),
     }
 }
 
 fn run(com: &RunCommand) -> Result<()> {
-    let output = std::process::Command::new(&com.command)
+    let mut child = std::process::Command::new(&com.command)
         .args(&com.args)
-        .output()
+        .spawn()
         .with_context(|| {
             format!(
                 "Tried to run '{}' with arguments {:?}",
@@ -46,12 +44,11 @@ fn run(com: &RunCommand) -> Result<()> {
             )
         })?;
 
-    if output.status.success() {
-        let std_out = std::str::from_utf8(&output.stdout)?;
-        println!("{}", std_out);
-    } else {
-        std::process::exit(1);
-    }
+    let es = child.wait()?;
 
-    Ok(())
+    match es.code() {
+        None => Ok(()),
+        Some(0) => Ok(()),
+        Some(n) => std::process::exit(n),
+    }
 }
