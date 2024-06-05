@@ -87,6 +87,10 @@ mod run {
 
         std::env::set_current_dir("/").context("not able to set the current dir")?;
 
+        unsafe {
+            libc::unshare(libc::CLONE_NEWPID);
+        }
+
         Ok(dir)
     }
 }
